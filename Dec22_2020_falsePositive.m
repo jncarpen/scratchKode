@@ -143,24 +143,41 @@ for nn = 1:length(JZ.neurons)
     end
 end
 
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% False positive (with simulated cells)
 
+warning('off','all')
 clear Msim
+noiseLevel = linspace(0, 0.025, 100);
 count = 1;
 for simcell = 1:100
+    % tell user which iteration youre on
+    dispMe = strcat('running simulation ', {' '}, sprintf('%.f', simcell), ' of 100...');
+    disp(dispMe{1,1});
+    
     % grab some position data
-    P_raw = units2cm(JZ.neurons(simcell).members(1).P);
+    whichSession = randi(length(JZ.neurons)); % randomly choose a session
+    P_raw = units2cm(JZ.neurons(whichSession).members(1).P);
     P_smooth = smooth_pos(P_raw, 2);
     
     clear simparam
     simparam.position = P_smooth;
     simparam.ctr_mass = [rand(1)*150, rand(1)*150];
-    simparam.noise = 0;
+    simparam.ref_point = [rand(1)*150, rand(1)*150];
+    simparam.noise = 0; % noiseLevel(simcell);
     simparam.width = rand(1)*5 + 5;
     simparam.theta = rand(1)*360;
+    
+    % simulate the cell
+%     [sim] = simulate_place(simparam);
     [sim] = simulate_place_egoMod(simparam);
+    
+    % save simulation parameters
+    Msim(simcell).simparam = simparam;
     
     % rename the variables
     ST = sim.spiketimes;
@@ -204,7 +221,7 @@ for simcell = 1:100
 
     %% shuffle the head direction values
     % define the number of shuffles we want
-    total_shuffles = 100;
+    total_shuffles = 1000;
     min_shuffle = floor(60/Fs); % 30 seconds
     max_shuffle = floor(600/Fs); % 200 seconds
 
@@ -219,7 +236,7 @@ for simcell = 1:100
         varex_place_sig varex_rh_sig modstren_rh_sig  modstren_hd_sig...
         error_sig
 
-    % shuffle the head direction values 100x
+    % shuffle the head direction values 1000x
     for shuff_num = 1:total_shuffles
         clear model_shuffled
         % grab the current shuffle value from vector
@@ -250,38 +267,8 @@ for simcell = 1:100
         error_shuff(shuff_num) = model_shuffled.err;
 
     end
-
-    % do the values fall within 2 standard deviations (95% CI) of the shuffled?
-    varex_place_ceil = mean(varex_place) + 2*std(varex_place);
-    varex_place_floor = mean(varex_place) - 2*std(varex_place);
-
-    varex_rh_ceil = mean(varex_rh) + 2*std(varex_rh);
-    varex_rh_floor = mean(varex_rh) - 2*std(varex_rh);
-
-    modstren_hd_ceil = mean(modstren_hd) + 2*std(modstren_hd);
-    modstren_hd_floor = mean(modstren_hd) - 2*std(modstren_hd);
-
-    modstren_rh_ceil = mean(modstren_rh) + 2*std(modstren_rh);
-    modstren_rh_floor = mean(modstren_rh) - 2*std(modstren_rh);
-
-    error_ceil = mean(error_shuff) + 2*std(error_shuff);
-    error_floor = mean(error_shuff) - 2*std(error_shuff);
-
-
-    % significant will give a 1, not significant will give a 0
-    varex_place_sig(count) = modelData.varExplained.place > varex_place_ceil | modelData.varExplained.place < varex_place_floor;
-    varex_rh_sig(count) = modelData.varExplained.model > varex_rh_ceil | modelData.varExplained.model < varex_rh_floor;
-    modstren_hd_sig(count) = modelData.modStrength.HD > modstren_hd_ceil | modelData.modStrength.HD < modstren_hd_floor;
-    modstren_rh_sig(count) = modelData.modStrength.RH > modstren_rh_ceil | modelData.modStrength.RH < modstren_rh_floor;
-    error_sig(count) = modelData.err > error_ceil | modelData.err < error_floor;
-
-
+    
     % save stuff
-    Msim(count).varex_place_sig = varex_place_sig(count);
-    Msim(count).varex_rh_sig = varex_rh_sig(count);
-    Msim(count).modstren_hd_sig = modstren_hd_sig(count);
-    Msim(count).modstren_rh_sig = modstren_rh_sig(count);
-    Msim(count).error_sig = error_sig(count);
     Msim(count).varex_place = varex_place;
     Msim(count).varex_rh = varex_rh;
     Msim(count).modstren_hd = modstren_hd;
@@ -290,46 +277,110 @@ for simcell = 1:100
 
     count = count + 1;
 end
+warning('on','all')
 
 
-%% PLOT STUFF
-% compare the results of the shuffled data with the real data
+%% plot how significance changes with noise levels
+% plot LOBF
+x = noiseLevel.*100;
+y = MS_RH;
+coefficients = polyfit(x, y, 1);
+xFit = linspace(min(x), max(x), 1000);
+yFit = polyval(coefficients , xFit);
+hold on;
+plot(xFit, yFit, '--r', 'LineWidth', 1.5);
+plot(x,y, '.', 'Color', 'k')
+xlabel('percent noise'); ylabel('RH tuning strength') 
+set(gca,'FontSize',20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
+% grid on;
 
-% name the variables
-X = varex_rh;
-Xd = modelData.varExplained.model;
-plotName = 'variance explained (model)';
-xname = 'variance explained';
 
-% find the confidence interval
-% SEM = std(X)/sqrt(length(X)); % standard error
-% ts = tinv([0.025  0.975], length(X)-1); % t-score (student's t inverse cumulative distribution function)
-% CI = mean(X) + ts*SEM; % confidence intervals 
+%% find percentage of cells that are significant
+% @todo: implement non-parametric method
+clear HD_sig RH_sig HD_sig_NP RH_sig_NP 
+HD_sig_NP = zeros(100,1); RH_sig_NP = zeros(100,1); 
+for i = 1:100
+    % grab the modulation strengths for each unit
+    MS_HD_now = Msim(i).modelData.modStrength.HD;
+    MS_RH_now = Msim(i).modelData.modStrength.RH;
+    
+    % grab the shuffled distribution for each unit
+    HD_shuf_now = Msim(i).modstren_hd;
+    RH_shuf_now = Msim(i).modstren_rh;
+    
+    % find confidence interval for the shuffled distribution
+    HD_ci = [mean(HD_shuf_now) - 2*std(HD_shuf_now), mean(HD_shuf_now) + 2*std(HD_shuf_now)];
+    RH_ci = [mean(RH_shuf_now) - 2*std(RH_shuf_now), mean(RH_shuf_now) + 2*std(RH_shuf_now)];
+    
+    HD_sig(i) = MS_HD_now < HD_ci(1) | MS_HD_now > HD_ci(2);
+    RH_sig(i) = MS_RH_now < RH_ci(1) | MS_RH_now > RH_ci(2);
+    
+    % sort the shuffled distribution and real values
+    HD_sort = sort([HD_shuf_now, MS_HD_now], 'ascend');
+    RH_sort = sort([RH_shuf_now, MS_RH_now], 'ascend');
+    
+    % use a non-parametric method to determine significance
+    if find(HD_sort == MS_HD_now) > 950; HD_sig_NP(i) = 1; end
+    if find(RH_sort == MS_RH_now) > 950; RH_sig_NP(i) = 1; end
+end
 
-% find +/- 2 standard deviations
-stdev = std(X);
 
-% plot
+sum(HD_sig)
+sum(HD_sig_NP)
+
+sum(RH_sig)
+sum(RH_sig_NP)
+
+%% find values for each run
+clear MS_HD MS_RH MS_HD_shuff MS_RH_shuff ...
+    VE_place VE_RH
+for i=1:100
+    MS_HD(i) = Msim(i).modelData.modStrength.HD;
+    MS_RH(i) = Msim(i).modelData.modStrength.RH;
+    
+    MS_HD_shuff(i) = mean(Msim(i).modstren_hd, 'omitnan');
+    MS_RH_shuff(i) = mean(Msim(i).modstren_rh, 'omitnan');
+    
+    VE_place(i) = mean(Msim(i).varex_place, 'omitnan');
+    VE_RH(i) = mean(Msim(1).varex_rh, 'omitnan');
+    
+end
+
+plotName = 'RH Tuning Strength';
+X = MS_RH;
+Xshuf = MS_RH_shuff;
 figure;
 set(gcf,'color','w');
 hold on;
-histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.6, 'FaceColor', [.8 .8 .8]);
-xline(Xd, '--k', 'LineWidth', 1.5);
-xline(mean(X) + stdev*2, ':r', 'LineWidth', 1.5); % std
-xline(mean(X) - stdev*2, ':r', 'LineWidth', 1.5); % std
-ylabel("frequency (count)"); xlabel(xname);
-title(plotName);
-set(gca,'FontSize',20, 'FontName', 'Sylfaen', 'FontWeight', 'normal');
-% l = legend('shuffled data', 'real data', '95% CI', 'Location', 'northeastoutside');
+histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'FaceColor', [0 .3 .8]);
+histogram(Xshuf, 15, 'EdgeColor', 'none', 'FaceAlpha', 0.3, 'FaceColor', 'k');
+xline(mean(Xshuf) + stdev*2, ':k', 'LineWidth', 1.5); % std
+xline(mean(Xshuf) - stdev*2, ':k', 'LineWidth', 1.5); % std
+ylabel("frequency (count)"); xlabel("tuning strength");
+title(plotName, 'FontName', 'Helvetica UI', 'FontSize', 20, 'FontWeight', 'normal');
+set(gca,'FontSize',20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
+% l = legend('real data', 'shuffled data', '95% CI', 'Location', 'northeastoutside');
 % legend boxoff    
 box off;
+
+% blue = [0 .3 .8];
+% red = [1 0 0];
+
+
+%% pie chart
+plotThis = HD_sig_NP;
+plotTitle = 'significant HD tuning';
+prop = sum(plotThis, 'omitnan')/length(plotThis);
+pc = pie(prop, 1-prop); title(plotTitle, 'FontWeight', 'normal')
+pc(2).FontSize = 15; pc(1).EdgeColor = 'white'; pc(1).FaceColor = 'black'; pc(1).FaceAlpha = .4;
+set(gca,'FontSize',15, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
 
 %% check confidence interval
 sum(X > mean(X) - stdev*2 & X < mean(X) + stdev*2); % should be around 95 (if sample is 100)
 
 %% plot autocorrelation of head direction
 % calculate and plot 
-[xcf,lags,bounds,h] = crosscorr(HD,ST, 'NumLags',100,'NumSTD',2);
+[xcf,lags,~,~] = crosscorr(HD,ST, 'NumLags',100,'NumSTD',2);
 figure; set(gcf,'color','w');
 stem(lags*Fs, xcf, '.k');
 xlabel('lag (s)'); ylabel('xcf'); title('autocorrelation of hd')
@@ -353,49 +404,25 @@ xlabel('lag (s)'); ylabel('xcf'); title('cross-correlation of speed and spiketra
 set(gca,'FontSize',20, 'FontName', 'Calibri Light', 'FontWeight', 'normal');
 box off;
 
+%% find some of the units that pass the significance criteria
+% find all indices when units were deemed significant
+HD_sig_vec = find(HD_sig_NP == 1);
+RH_sig_vec = find(RH_sig_NP == 1);
 
+% choose one of these measures to look at
+sig_measure = RH_sig_vec;
 
-%% Plot RH angle tuning (real v. shuffle) - J.F2B
-% plot the RH angle tuning of the real data (entire population) against 
-% the (mean) RH tuning of the shuffled data
-
-% find the mean of the shuffled distribution for each unit
-clear X_shuff X_data
-for i = 1:100
-    X_shuff(i) = mean(Msim(i).modstren_rh, 'omitnan');
-    X_data(i) = Msim(i).modelData.modStrength.RH;
+for j = 1:length(sig_measure)
+    idx_now = sig_measure(j);
+    P = Msim(j).P;
+    ST = Msim(j).ST;
+    
+    % plot
+    figure(j);
+    pathPlot_hd(P, ST, get_hd(P));
 end
 
-% find the mean of each of these distributions
-mean_dist = [mean(X_shuff, 'omitnan'), mean(X_data, 'omitnan')];
 
-% calculate confidence intervals
-ci_X = [mean(X_shuff) - 2*std(X_shuff), mean(X_shuff) + 2*std(X_shuff)];
-ci_Y = [mean(X_data) - 2*std(X_data), mean(X_data) + 2*std(X_data)];
-
-figure; hold on;
-s = scatter(X_shuff, X_data, [25], 'k', 'filled');
-s.MarkerFaceAlpha = .6;
-meanPoint = scatter(mean_dist(1), mean_dist(2), [60], 'r', 'filled');
-meanPoint.MarkerFaceAlpha = .6;
-plot(ci_X, ci_Y, '--r', 'LineWidth', 1.15)
-xlabel('RH tuning strength (shuffled data)'); ylabel('RH tuning strength (real data)')
-set(gca,'FontSize', 15, 'FontName', 'Leelawadee UI', 'FontWeight', 'normal');
-box off;
-
-
-
-
-
-
-
-%% SCRATCH
-
-% % run the model on a simulated cell first
-% simParams.position = P; simParams.ref_point = [75, 75];
-% simParams.theta = 270; simParams.noise = 0;
-% simParams.width = 10; simParams.ctr_mass = [75,75];
-% [sim] = simulate_ego_cell(simParams);
 
 
 

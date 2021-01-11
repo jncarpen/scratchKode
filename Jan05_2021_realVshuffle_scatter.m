@@ -4,28 +4,28 @@
 % plot the real data (entire population) against 
 % the (mean) of the shuffled population
 
-% find the mean of the shuffled distribution for each unit
-clear irate_mean icont_mean
-for i = 1:length(irate_array)
-    irate_mean(i) = mean(irate_array{1,i}, 'omitnan');
-    icont_mean(i) = mean(icont_array{1,i}, 'omitnan');
-end
+X_data = MS_HD;
+X_shuf = MS_HD_shuff;
+plotTitle = 'RH Modulation (Real v. Shuffle)';
+xname = 'rh mod (shuffle)';
+yname = 'rh mod (data)';
 
 % find the mean of each of these distributions
-mean_dist = [mean(irate_mean, 'omitnan'), mean(I_rate_content, 'omitnan')];
+mean_dist = [mean(X_shuf, 'omitnan'), mean(X_data, 'omitnan')];
 
 % calculate confidence intervals
-ci_X = [mean(irate_mean) - 2*std(irate_mean), mean(irate_mean) + 2*std(irate_mean)];
-ci_Y = [mean(I_rate_data) - 2*std(I_rate_data), mean(I_rate_data) + 2*std(I_rate_data)];
+ci_shuf = [mean(X_shuf) - 2*std(X_shuf), mean(X_shuf) + 2*std(X_shuf)];
+ci_data = [mean(X_data) - 2*std(X_data), mean(X_data) + 2*std(X_data)];
 
 figure; hold on;
-s = scatter(irate_mean, I_rate_data, [25], 'k', 'filled');
+s = scatter(X_shuf, X_data, [25], 'k', 'filled');
 s.MarkerFaceAlpha = .2;
-meanPoint = scatter(mean_dist(1), mean_dist(2), [60], 'g', 'filled');
-meanPoint.MarkerFaceAlpha = .9;
-plot(ci_X, ci_Y, '--r', 'LineWidth', 1.15)
+meanPoint = scatter(mean_dist(1), mean_dist(2), [60], [0 .8 .2], 'filled');
+meanPoint.MarkerFaceAlpha = .6;
+plot(ci_shuf, ci_data, '--r', 'LineWidth', 1.15) % CI line
+plot(linspace(0, 6), linspace(0, 6), ':b', 'LineWidth', 1.15); % equality line
 legend('data', 'mean','95% CI'); legend boxoff
-title('information rate (bits/s)', 'FontWeight','normal');
-xlabel('info rate (shuffled data)'); ylabel('info rate (real data)')
-set(gca,'FontSize', 15, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
+title(plotTitle, 'FontWeight','normal');
+xlabel(xname); ylabel(yname); xlim([0 1]); ylim([0 1]);
+set(gca,'FontSize', 20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
 box off;

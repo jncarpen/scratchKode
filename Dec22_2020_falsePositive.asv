@@ -184,6 +184,23 @@ for simcell = 1:100
     % simulate place cell
     [sim] = simulate_place(map, P_smooth(:,1));
     
+    % visualize
+    figure
+    map = analyses.map(P_smooth, sim.ST, 'smooth', 2, 'binWidth', 150/100); % calculate tuning curve
+    peakRate = nanmax(nanmax(map.z));
+    rate_map_title = strcat('peak fr: ', sprintf('%.2f',peakRate));
+    plot.colorMap(map.z)
+    pbaspect([1 1 1])
+    colormap(gca,'jet')
+    c2 = colorbar; c2.FontSize = 25;
+    set(gca,'xtick',[])
+    set(gca,'ytick',[])
+    title(rate_map_title, 'FontName', 'Calibri light', 'FontSize', 30, 'FontWeight', 'normal');
+    box off
+    
+    figure
+    pathPlot_hd(P_smooth, sim.ST, get_hd(P_smooth))
+    
     % save simulation parameters
     Msim(simcell).simparam = root;
     

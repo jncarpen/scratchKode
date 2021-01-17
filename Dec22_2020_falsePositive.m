@@ -223,7 +223,7 @@ for simcell = 1:100
 
     % save stuff
     Msim(count).modelData = modelData;
-    Msim(count).nn = nn; Msim(count).uu = uu;
+%     Msim(count).nn = nn; Msim(count).uu = uu;
 
 
     %% shuffle the head direction values
@@ -353,30 +353,39 @@ for i=1:100
     
 end
 
-plotName = 'RH Tuning Strength';
-X = MS_RH;
-Xshuf = MS_RH_shuff;
+plotName = 'HD Tuning Strength';
+X = MS_HD;
+Xshuf = MS_HD_shuff;
+stdev = std(MS_HD_shuff, 'omitnan');
 figure;
 set(gcf,'color','w');
 hold on;
-histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'FaceColor', [0 .3 .8]);
+histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'FaceColor', [1 0 0]);
 histogram(Xshuf, 15, 'EdgeColor', 'none', 'FaceAlpha', 0.3, 'FaceColor', 'k');
 xline(mean(Xshuf) + stdev*2, ':k', 'LineWidth', 1.5); % std
 xline(mean(Xshuf) - stdev*2, ':k', 'LineWidth', 1.5); % std
 ylabel("frequency (count)"); xlabel("tuning strength");
 title(plotName, 'FontName', 'Helvetica UI', 'FontSize', 20, 'FontWeight', 'normal');
 set(gca,'FontSize',20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
-% l = legend('real data', 'shuffled data', '95% CI', 'Location', 'northeastoutside');
-% legend boxoff    
+l = legend('real data', 'shuffled data', '95% CI', 'Location', 'northeastoutside');
+legend boxoff    
 box off;
 
 % blue = [0 .3 .8];
 % red = [1 0 0];
 
+%% how many of the significant neurons have distant locations
+
+sigUnits = find(HD_sig == 1);
+for i = 1:length(sigUnits)
+    sigX(i) = Msim(sigUnits(i)).modelData.bestParams.xref;
+    sigY(i) = Msim(sigUnits(i)).modelData.bestParams.yref;
+end
+
 
 %% pie chart
-plotThis = HD_sig_NP;
-plotTitle = 'significant HD tuning';
+plotThis = RH_sig_NP;
+plotTitle = 'significant RH tuning';
 prop = sum(plotThis, 'omitnan')/length(plotThis);
 pc = pie(prop, 1-prop); title(plotTitle, 'FontWeight', 'normal')
 pc(2).FontSize = 15; pc(1).EdgeColor = 'white'; pc(1).FaceColor = 'black'; pc(1).FaceAlpha = .4;
@@ -418,7 +427,6 @@ RH_sig_vec = find(RH_sig_NP == 1);
 
 % choose one of these measures to look at
 sig_measure = RH_sig_vec;
-
 for j = 1:length(sig_measure)
     idx_now = sig_measure(j);
     P = Msim(j).P;

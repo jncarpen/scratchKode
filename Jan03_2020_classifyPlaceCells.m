@@ -17,9 +17,9 @@ for nn = 1:length(JZ.neurons)
         ST = JZ.neurons(nn).members(uu).ST;
                 
         % define a threshold based on how long the session is
-        spikethresh = round((nanmax(P_raw(:,1))/6));
+        %spikethresh = round((nanmax(P_raw(:,1))/6));
         
-        if length(ST) > spikethresh
+        if length(ST) > 100%spikethresh
             % smooth position vectors
             P = smooth_pos(P_raw, 2);
             t = P(:,1); 
@@ -38,6 +38,7 @@ for nn = 1:length(JZ.neurons)
             total_shuffles = 100;
             I_rate_shuff = zeros(total_shuffles,1);
             I_content_shuff = zeros(total_shuffles,1);
+            
             for shuff_num = 1:total_shuffles
                 shuff_value = randi(43500) + 1500; % 30 seconds to 15 mins
                 
@@ -141,50 +142,24 @@ xlim([-0.05 3.05])
 
 
 
+%% plot neurons classified as place cells
+
+for i = 1:length(neuron)
+    now = neuron(i);
+    for unit = 1:length(JZ.neurons(now))
+        P_now = smooth_pos(units2cm(JZ.neurons(now).members(unit).P),2);
+        ST_now = JZ.neurons(now).members(unit).ST;
+        
+        % plot
+        figure
+        title_now = strcat('N', sprintf('%.f', now), ' U', sprintf('%.f', unit));
+        pathPlot_hd(P_now, ST_now, get_hd(P_now));
+        title(title_now)
+        pause; close all;
+    end
+end
 
 
 
 
 
-
-
-%% SCRATCH CODE
-
-% % compute spatial information (SI)
-%             clear thisbin allbins
-%             count = 1;
-%             for rr = 1:nbins
-%                 for cc = 1:nbins
-%                     if countMap(rr,cc) == 0 % correct for undefined log2 values
-%                         thisbin(rr,cc) = 0;
-%                         allbins(count) = thisbin(rr,cc);
-%                         count = count + 1;
-%                     else
-%                         thisbin(rr,cc) = ratemap(rr,cc)*log2(ratemap(rr,cc)/mean_rate)*pdx(rr,cc);
-%                         allbins(count) = thisbin(rr,cc);
-%                         count = count + 1;
-%                     end
-%                 end
-%             end
-%             
-%             % sum everything together and divide by mean_rate to get
-%             % bits/spike
-%             SI = sum(allbins, 'omitnan')/mean_rate
-
-
-% % interpolate values
-%             % interpolate nan values (see if this helps...)
-%             interp_occ = inpaint_nans(map.timeRaw,3);
-%             interp_ratemap = inpaint_nans(map.zRaw,3);
-%             % smooth (with interp)
-%             sigma = 2;
-%             occupancy = imgaussfilt(interp_occ, sigma);
-%             ratemap = imgaussfilt(interp_ratemap, sigma);
-
-
-% % get binary spiketrain
-%             spikes = ST(ST < P(end,1) & ST > P(1,1)); % remove bad STs
-%             edgesT = linspace(P(1,1), P(end,1), numel(P(:,1))+1);
-%             binnedSpikes = histcounts(spikes,edgesT);
-%             binnedSpikes(binnedSpikes>1) = 1;
-%             

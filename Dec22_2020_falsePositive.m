@@ -353,14 +353,14 @@ for i=1:100
     
 end
 
-plotName = 'HD Tuning Strength';
-X = MS_HD;
-Xshuf = MS_HD_shuff;
-stdev = std(MS_HD_shuff, 'omitnan');
+plotName = 'RH Tuning Strength';
+X = MS_RH;
+Xshuf = MS_RH_shuff;
+stdev = std(MS_RH_shuff, 'omitnan');
 figure;
 set(gcf,'color','w');
 hold on;
-histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'FaceColor', [1 0 0]);
+histogram(X, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'FaceColor', [0 .3 .8]);
 histogram(Xshuf, 15, 'EdgeColor', 'none', 'FaceAlpha', 0.3, 'FaceColor', 'k');
 xline(mean(Xshuf) + stdev*2, ':k', 'LineWidth', 1.5); % std
 xline(mean(Xshuf) - stdev*2, ':k', 'LineWidth', 1.5); % std
@@ -382,21 +382,39 @@ for i = 1:length(sigUnits)
     sigY(i) = Msim(sigUnits(i)).modelData.bestParams.yref;
 end
 
+% hist
+figure;
+set(gcf,'color','w');
+hold on;
+histogram(sigY, 10, 'EdgeColor', 'none', 'FaceAlpha', 0.8, 'FaceColor', 'k');
+ylabel("frequency (count)"); xlabel("yref");
+title('model-derived reference points (sig)', 'FontName',...
+    'Helvetica UI', 'FontSize', 15, 'FontWeight', 'normal');
+set(gca,'FontSize',20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
+box off;
+
+% scatter plot
+s = scatter(sigX,sigY,40,'k','filled');
+s.MarkerFaceAlpha = 0.4;  
+title('reference point locations', 'FontName',...
+    'Helvetica UI', 'FontSize', 15, 'FontWeight', 'normal');
+set(gca,'FontSize',20, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
+
 
 %% pie chart
-plotThis = RH_sig_NP;
-plotTitle = 'significant RH tuning';
+plotThis = HD_sig_NP;
+plotTitle = 'significant HD tuning';
 prop = sum(plotThis, 'omitnan')/length(plotThis);
 pc = pie(prop, 1-prop); title(plotTitle, 'FontWeight', 'normal')
 pc(2).FontSize = 15; pc(1).EdgeColor = 'white'; pc(1).FaceColor = 'black'; pc(1).FaceAlpha = .4;
 set(gca,'FontSize',15, 'FontName', 'Helvetica UI', 'FontWeight', 'normal');
 
 %% check confidence interval
-sum(X > mean(X) - stdev*2 & X < mean(X) + stdev*2); % should be around 95 (if sample is 100)
+sum(X > mean(X) - stdev*2 & X < mean(X) + stdev*2) % should be around 95 (if sample is 100)
 
 %% plot autocorrelation of head direction
 % calculate and plot 
-[xcf,lags,~,~] = crosscorr(HD,ST, 'NumLags',100,'NumSTD',2);
+[xcf,lags,~,~] = crosscorr(HD,ST, 'NumLags',200,'NumSTD',2); close all;
 figure; set(gcf,'color','w');
 stem(lags*Fs, xcf, '.k');
 xlabel('lag (s)'); ylabel('xcf'); title('autocorrelation of hd')

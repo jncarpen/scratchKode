@@ -1,0 +1,15 @@
+%% Check to see if the circular mean messes things up
+
+
+root.peakrate = (rand(1)*14)+6;
+root.ctrX = (rand(1)*100)+25;
+root.ctrY = (rand(1)*100)+25;
+root.sigmaX = 7;
+root.sigmaY = 7;
+root.size = 150;
+root.bins = 20;
+root.P = P;
+[map] = simulate_ratemap(root);
+figure;imagesc(map.z)
+
+[out] = modelMe_V2(P, ST);

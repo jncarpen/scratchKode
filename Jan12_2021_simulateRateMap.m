@@ -1,4 +1,6 @@
-
+%% Simulate ratemap, scratch code.
+% J. Carpenter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % make a ratemap
 i = 10;
 xpos = optiData{1,i}.position.x;

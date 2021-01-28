@@ -61,11 +61,25 @@ end
 
 % plot things
 figure; hold on;
+title('\theta_p: linear v. circular mean');
+xlabel('\theta_p (deg)')
 histogram(theta_M, linspace(-180,180,10));
 histogram(theta_CM, linspace(-180,180,10));
+legend('linear', 'circular')
 
 figure; hold on;
-histogram(x_M);
-histogram(x_CM);
+title('g: linear v. circular mean');
+xlabel('g')
+histogram(g_M);
+histogram(g_CM);
+legend('linear', 'circular')
+
+figure; hold on;
+title('y_ref: linear v. circular mean');
+xlabel('y_ref')
+histogram(y_M);
+histogram(y_CM);
+legend('linear', 'circular')
+
 
 

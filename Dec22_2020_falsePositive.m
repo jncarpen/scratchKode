@@ -23,7 +23,7 @@ for nn = 1:length(JZ.neurons)
         Fs = mode(diff(P_raw(:,1))); 
 
         % smooth position vectors
-        sigma = 2; % width of Gaussian kernel
+        sigma = 3; % width of Gaussian kernel
         P = smooth_pos(P_raw, sigma);
     
         % get 'real' head direction values (deg)
@@ -33,12 +33,11 @@ for nn = 1:length(JZ.neurons)
         total_iters = 100; 
         clear monte error_for_comparison
         for optim_iter = 1:total_iters 
-            % choose some initial conditions randomly
-            initial = choose_initial_conditions(P);
             % run the model 
-            [model] = modelMe(P, ST, HD, initial);
-
-            monte(optim_iter).model = model; % save all the runs to be compared
+            [model] = modelMe_V2(P, ST, HD);
+            
+            % save all the runs to be compared
+            monte(optim_iter).model = model; 
             error_for_comparison(optim_iter) = model.err;
         end
 

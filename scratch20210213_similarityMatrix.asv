@@ -1,0 +1,119 @@
+%% February 13, 2020
+% Compute a similarity matrix for a vector field
+% Similarity measure from publication:
+% Similarity Measure for Vector Field Learning (Hongyu Li,I-Fan Shen 2006)
+
+%% calculate vector field
+dir = out.measures.mu.HD;
+scale = out.measures.MVL.HD;
+scale(isnan(scale))=0;
+xpos = out.info.bin.X;
+ypos = out.info.bin.Y;
+
+% directional components
+uraw = cos(dir * pi/180); 
+vraw = sin(dir * pi/180);
+[sz_i, sz_j] = size(uraw);
+
+% scaled vectors
+u = uraw.*sf; 
+v = vraw.*sf;
+
+%% 1. alpha: euclidean distance
+% calculate [Euclidean] distance term
+dist_term = exp(-sqrt(((xpos(5,5)-xpos(5,6)).^2)+((ypos(5,5)-ypos(5,6)).^2)));
+
+%% 2. beta: angular difference
+vi = [u(5,5) v(5,5)];
+vj = [u(5,6) v(5,6)];
+
+% take dot product of vi.vj
+dot_vivj = dot(vi,vj);
+
+% calculate the norm of vi and vj
+norm_vi = norm(vi);
+norm_vj = norm(vj);
+
+% calcuate angular term
+ang_term = exp(1-(dot_vivj./(norm_vi * norm_vj)));
+
+%% 3. gamma: magnitude difference
+% calculate magnitude term
+mag_term = exp(-(norm(norm_vi-norm_vj)));
+
+%% 4. vector pair similarity
+% impose req. that all components contribute equally
+alpha = 1/3;
+beta = 1/3;
+gamma = 1/3;
+
+% calculate similarity value (range 0 to 1)
+sim_pipj = alpha*dist_term + beta*ang_term + gamma*mag_term;
+
+%% sliding window approach
+
+% x contains values to be filtered
+x = xpos; y = ypos;
+% set horizontal and vertical limits
+hl = 2; vl = 2;
+% check size of input
+[row col space]=size(x);
+% make an output vector of same size and type as input
+y=0*x; 
+
+
+
+for i=1:row % loop thru rows
+    for j=1:col % loop thru values one by one
+        if i==1 & j==1 % first row, first col
+            sim = zeros(3,1);
+            sim(1) = vsim(x(i,j), x(i,j+1), y(i,j), y(i,j+1), u(i,j), u(i,j+1), v(i,j), v(i,j+1));
+            sim(2) = vsim(x(i,j), x(i+1,j), y(i,j), y(i+1,j), u(i,j), u(i+1,j), v(i,j), v(i+1,j));
+            sim(3) = vsim(x(i,j), x(i+1,j+1), y(i,j), y(i+1,j+1), u(i,j), u(i+1,j+1), v(i,j), v(i+1,j+1));
+        elseif i==1 & j==col % first row, last col
+        elseif i==1 & j~=1 & j~=col % first row, not first or last col
+            sim = zeros(5,1);
+            sim(1) = vsim(x(i,j), x(i,j-1), y(i,j), y(i,j-1), u(i,j), u(i,j-1), v(i,j), v(i,j-1));
+            sim(2) = vsim(x(i,j), x(i+1,j+1), y(i,j), y(i+1,j+1), u(i,j), u(i+1,j+1), v(i,j), v(i+1,j+1));
+            sim(3) = vsim(x(i,j), x(i+1,j), y(i,j), y(i+1,j), u(i,j), u(i+1,j), v(i,j), v(i+1,j));
+            sim(4) = vsim(x(i,j), x(i+1,j+1), y(i,j), y(i+1,j+1), u(i,j), u(i+1,j+1), v(i,j), v(i+1,j+1));
+            sim(5) = vsim(x(i,j), x(i,j+1), y(i,j), y(i,j+1), u(i,j), u(i,j+1), v(i,j), v(i,j+1));
+        elseif i==1 & j==col % first row, last col
+            sim = zeros(3,1);
+            sim(1) = vsim(x(i,j), x(i,j-1), y(i,j), y(i,j-1), u(i,j), u(i,j-1), v(i,j), v(i,j-1));
+            sim(2) = vsim(x(i,j), x(i+1,j), y(i,j), y(i+1,j), u(i,j), u(i+1,j), v(i,j), v(i+1,j));
+            sim(3) = vsim(x(i,j), x(i+1,j-1), y(i,j), y(i+1,j-1), u(i,j), u(i+1,j-1), v(i,j), v(i+1,j-1));
+        elseif j==1 & i~=1 & i~=row % first col, not first or last row
+            sim = zeros(5,1);
+            sim(1) = vsim(x(i,j), x(i-1,j), y(i,j), y(i-1,j), u(i,j), u(i-1,j), v(i,j), v(i-1,j));
+            sim(2) = vsim(x(i,j), x(i-1,j+1), y(i,j), y(i-1,j+1), u(i,j), u(i-1,j+1), v(i,j), v(i-1,j+1));
+            sim(3) = vsim(x(i,j), x(i,j+1), y(i,j), y(i,j+1), u(i,j), u(i,j+1), v(i,j), v(i,j+1));
+            sim(4) = vsim(x(i,j), x(i+1,j), y(i,j), y(i+1,j), u(i,j), u(i+1,j), v(i,j), v(i+1,j));
+            sim(5) = vsim(x(i,j), x(i+1,j+1), y(i,j), y(i+1,j+1), u(i,j), u(i+1,j+1), v(i,j), v(i+1,j+1));
+        elseif
+        end
+        
+        
+        
+        
+        
+        
+        
+        
+        % output
+        y(i-vl,j-hl,s)=sum(x_pad(i,j-hl:j+hl))+sum(x_pad(i-vl:i+vl,j));
+         %Summing Values around current entry according 2 vl and hl
+        y(i-vl,j-hl,s)=y(i-vl,j-hl,s)-x_pad(i,j);%Current Values gets added
+        %twice. Once in row and once in Col
+
+    end
+end
+
+
+
+
+
+
+
+
+

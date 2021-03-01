@@ -1,47 +1,66 @@
 %% Simulate 100 place cells and run the model on them
 
-P = data(4).pos;
-step = 0.5;
-x = min(P(:,2))+10:step:max(P(:,2))-10;
-y = min(P(:,3))+10:step:max(P(:,3))-10;
-
-clear varEx tuningStrength pc100 egoCell_100
-
 for i = 1:100
-clear param sim model
-% set parameters for simulated cell
-param.position = data(4).pos;
-x_i = randsample(x,1)';
-y_i = randsample(y,1)';
-param.ctr_mass = [x_i y_i]; % center of arena
-param.ref_point = [randsample(x,1) randsample(y,1)];
-param.noise = 0; % no noise 
-param.width = 1;
-param.theta = 270; %rand(1).*360;
-param.radius = 40; %rand(1).*80;
+% root structure for ratemap
+P = dataof(i).P;
+root.A = 10;
+root.ctr = [75 75];
+root.sigma = [14 18];
+root.size = 150;
+root.bins = 20;
+root.P = P;
+
 %simulate the cell
-[sim] = simulate_place(param);
+[map] = simulate_ratemap(root);
+[sim] = simulate_place(map,P(:,1));
+
 % run the model
-[model] = modelMe(sim.position, sim.spiketimes);
-ref_point = [model.bestParams.xref, model.bestParams.yref]
-model.bestParams.thetaP
-figure
-plot_vectorMod_model(model)
+[out] = modelMe(P, sim.ST, get_hd(P));
+
+% save
+place100new(i).root = root;
+place100new(i).ST = sim.ST;
+place100new(i).out = out;
+end
+
+
+%% Simulate 100 egocentric cells and run the model on them
+for i = 1:100
+% parameters for simulation
+P = dataof(i).P;
+param.theta = randi(360);
+param.P = P;
+param.Z = get_hd(P);
+param.kappa = 5;
+param.rp = [75 75];
+param.A = 8;
+
+%simulate the cell
+[sim, ~] = simulate_ego(param);
+
+% run the model
+[out] = modelMe(P, sim.ST, get_hd(P));
+
+% save
+ego100new(i).root = param;
+ego100new(i).ST = sim.ST;
+ego100new(i).out = out;
+end
 
 %% save stuff
-varEx(i) = model.varExplained.model;
-tuningStrength(i) = model.bestParams.g;
+varEx(i) = out.varExplained.model;
+tuningStrength(i) = out.bestParams.g;
 egoCell_100(i).st = sim.spiketimes;
-egoCell_100(i).model = model;
+egoCell_100(i).model = out;
 egoCell_100(i).param = param;
 
 % visualize
 subplot(1,3,1)
-plot_modelDynamics(sim.position, sim.spiketimes, model, ref_point);
+plot_modelDynamics(sim.position, sim.spiketimes, out, ref_point);
 subplot(1,3,2)
-plot_vectorMod(model)
+plot_vectorMod(out)
 subplot(1,3,3)
-plot_iterations(model)
+plot_iterations(out)
 
 % get spiketrain
 [spikeTrain, ~] = binSpikes(sim.position(:,1), sim.spiketimes);
@@ -51,19 +70,19 @@ fig = figure('units','normalized','outerposition',[0 0 1 1]); % make fullscreen 
 set(gcf,'color','w');
 fileBody = strcat('allo_', sprintf('%.f', i));
 subplot(2,3,1)
-plot_modelDynamics(sim.position, sim.spiketimes, model, ref_point);
+plot_modelDynamics(sim.position, sim.spiketimes, out, ref_point);
 hold on; plot(73, 112, 'o')
 subplot(2,3,2)
 plot(binCtrs, tcVals, 'LineWidth', 1.1, 'Color', 'k'); box off;
 xlabel('egocentric bearing (deg)'); ylabel('firing rate (Hz)')
 subplot(2,3,3)
-plot_iterations(model)
+plot_iterations(out)
 subplot(2,3,4)
-plot_vectorMod_data(model)
+plot_vectorMod_data(out)
 subplot(2,3,5)
-plot_vectorMod(model)
+plot_vectorMod(out)
 subplot(2,3,6)
-plot_vectorMod_model(model)
+plot_vectorMod_model(out)
 
 % save figures
 filename = strcat('D:\egoAnalysis\test\', fileBody, '.png');
@@ -73,7 +92,7 @@ saveas(fig, filename);
 close all 
 end
 
-model = JZM.neurons(105).members(1).model;
+out = JZM.neurons(105).members(1).model;
 
 
 % make

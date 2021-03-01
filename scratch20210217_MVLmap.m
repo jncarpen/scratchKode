@@ -51,12 +51,14 @@ end
 % find location of max MVL
 [maxValue, linearIndexesOfMaxes] = max(MVL(:));
 [rowsOfMaxes, colsOfMaxes] = find(MVL == maxValue);
+maxValue
 
 figure; set(gcf,'color','w'); hold on;
-imagesc(MVL);
+imagesc(MVL); shading interp;
 scatter(rowsOfMaxes(1), colsOfMaxes(1), 30, 'k', 'filled');
 pbaspect([1 1 1])
 set(gca, 'visible', 'off');
+
 
 
 

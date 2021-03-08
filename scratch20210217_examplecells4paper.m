@@ -11,13 +11,16 @@
 % load('D:\Data\External Data\Simulation-EX\placehd270.mat')
 % load('D:\Data\External Data\Simulation-EX\egodist270.mat')
 
-RP = [75 75];
-pathPlot_hd(P, ST, HD);
-outRM = plot_egoRM(P, ST, RP);
-out = modelMe(P,ST,HD);
+% RP = [75 75];
+pathPlot_hd(P, ST, get_hd(P));
+out = modelMe(P,ST,get_hd(P));
 plotMe(out);
 
+outRM = plot_egoRM(P, ST, RP);
+
 plot_MVLmap(P,ST,HD)
+
+tc_shuffle(P, ST, RP)
 
 figure
 map = analyses.map(P, ST, 'smooth', 2, 'binWidth', 150/75); % calculate tuning curve
@@ -35,7 +38,7 @@ box off
 
 [strain] = binSpikes(P(:,1), ST);
 hdTuning(HD, P, strain);
-tc = analyses.turningCurve(spkhd, poshd, sampleTime, <options>)
+
 
 
 

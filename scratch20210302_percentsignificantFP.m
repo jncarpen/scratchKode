@@ -1,8 +1,32 @@
 %% PERCENT SIGNIFICANT (FROM FALSE POSITIVE CALCULATIONS)
 % March 2, 2021
 
-A = placehd100;
-B = placehd100FP;
+%% pull out
+clear all;
+pathname = 'D:\Data\External Data\Trajectory-POP\FP\TJ63';
+D = dir(pathname); D = D(3:102);
+
+usortpathlist = cell(1,100);
+for i = 1:100
+    usortpathlist{i} = [D(i).folder, '/', D(i).name];
+end
+pathlist = natsortfiles(usortpathlist);
+
+for i = 1:length(D)
+    a = load(pathlist{i});
+    tj63fp(i).B = a.B;
+end
+
+% save('D:\Data\External Data\NOISE\noise-ego\FP\ego100_noise0FP.mat', ...
+%     'ego100_noise0FP', '-v7.3');
+
+save('D:\Data\External Data\Trajectory-POP\FP\FPconcat\tj63fp.mat', 'tj63fp', '-v7.3')
+load('D:\Data\External Data\Trajectory-POP\OFS63.mat')
+
+%%
+
+A = place100;
+B = tj63fp;
 %% find percentage of cells that are significant
 HD_sig_NP = zeros(100,1); RH_sig_NP = zeros(100,1); 
 for i = 1:100

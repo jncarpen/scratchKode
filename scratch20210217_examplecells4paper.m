@@ -17,6 +17,9 @@ out = modelMe(P,ST,get_hd(P));
 plotMe(out);
 
 outRM = plot_egoRM(P, ST, RP);
+ego_RM = egoRateMap(P, ST, RP);
+d = sqrt((0 - (10)).^2 + (0 - 10).^2);
+
 
 plot_MVLmap(P,ST,HD)
 

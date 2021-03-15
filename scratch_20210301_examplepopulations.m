@@ -3,18 +3,25 @@
 
 %% LOAD TRAJECTORY DATA
 % 100 open field sessions from jan sigurd's dataset
-load('D:\Data\External Data\Blackstad-OF\dataof.mat')
+OF = load('D:\Data\Project Data\Blackstad-OF\openfield.mat');
+OF = OF.openfield;
+sesslist = [1:length(OF), floor(linspace(4,84,14))];
 
 %% 1. EGOCENTRIC BEARING + DISTANCE
+A = load('D:\Data\Project Data\Simulation-POP1\ring100.mat');
+A = ring100;
 for iter = 1:100
-    param.A = (300-250).*rand(1) + 250;
-    param.P = dataof(iter).P;
+%     param.A = (300-250).*rand(1) + 250;
+%     param.P = dataof(iter).P;
+%     param.Z = get_hd(param.P);
+%     param.theta = randi(360);
+%     param.kappa = 4;
+%     param.sigma = 8;
+%     param.radius = (35-25).*rand(1) + 25;
+%     param.rp = [(120-40).*rand(1) + 40,(120-40).*rand(1) + 40];
+    param = A(iter).param;
+    param.P = openfield(sesslist(iter)).P;
     param.Z = get_hd(param.P);
-    param.theta = randi(360);
-    param.kappa = 4;
-    param.sigma = 8;
-    param.radius = (35-25).*rand(1) + 25;
-    param.rp = [(120-40).*rand(1) + 40,(120-40).*rand(1) + 40];
     % simulate cell & save spiketimes
     [sim] = simulate_egodist(param); ST = sim.ST;
     
@@ -36,12 +43,12 @@ for iter = 1:100
     ring100(iter).out = modelData;
 end
 % save matfiles
-save('D:\Data\External Data\Simulation-POP\ring100.mat', 'ring100', '-v7.3');
+save('D:\Data\Project Data\Simulation-POP2\ring100.mat', 'ring100', '-v7.3');
 
 %% 2. PLACE 
 for iter = 1:100
     root.A = (8-6).*rand(1) + 6;
-    root.P = dataof(iter).P;
+    root.P = dataof(2).P;
     root.Z = get_hd(root.P);
     root.sigma = [(15-10).*rand(1) + 10, (15-10).*rand(1) + 10];
     root.ctr = [(120-40).*rand(1) + 40,(120-40).*rand(1) + 40]; % exclude edges
@@ -52,6 +59,8 @@ for iter = 1:100
     [map] = simulate_ratemap(root);
     [sim] = simulate_place(map,root.P(:,1)); ST = sim.ST;
     pathPlot_hd(root.P, ST, get_hd(root.P))
+    
+    modelData = modelMe(root.P, ST, get_hd(root.P))
     
     % monte carlo runs
     totalruns = 100;
@@ -70,7 +79,7 @@ for iter = 1:100
     place100(iter).ST = ST;
     place100(iter).out = modelData;
 end
-save('D:\Data\External Data\Simulation-POP\place100.mat', 'place100', '-v7.3');
+save('D:\Data\External Data\Trajectory-POP\OF_S2\OFS2.mat', 'place100', '-v7.3');
 
 
 %% 3. PLACE + HD
@@ -118,7 +127,8 @@ save('D:\Data\External Data\Simulation-POP\placehd100.mat', 'placehd100','-v7.3'
 %% 4. EGOCENTRIC BEARING
 for iter = 1:100
     % set parameters for hd component
-    param.P = dataof(iter).P;
+    randssn = randi(length(openfield));
+    param.P = dataof(randssn).P;
     param.A = (10-8).*rand(1) + 8;
     param.rp = [(120-40).*rand(1) + 40,(120-40).*rand(1) + 40]; 
     param.P = root.P;
@@ -146,7 +156,7 @@ for iter = 1:100
     ego100(iter).ST = ST;
     ego100(iter).out = modelData;
 end
-save('D:\Data\External Data\Simulation-POP\ego100.mat', 'ego100','-v7.3');
+save('D:\Data\External Data\NOISE\ego\ego100.mat', 'ego100','-v7.3');
 
 
 %% 5. HEAD DIRECTION

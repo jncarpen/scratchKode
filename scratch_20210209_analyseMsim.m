@@ -1,0 +1,108 @@
+%% ANALYZE MSIM
+
+% load in Msim (OF)
+% clear all; close all;
+% load('D:\dManAnalysis\20210208_fp_openfield25_data\Msim.mat')
+
+fp = place100FP;
+pop = place100;
+%% find percentage of cells that are significant
+% @todo: implement non-parametric method
+% clear HD_sig RH_sig HD_sig_NP RH_sig_NP 
+count = 1;
+HD_sig_NP = zeros(100,1); RH_sig_NP = zeros(100,1); 
+for i = 1:100
+    % grab the modulation strengths for each unit
+    MS_HD_now = pop(i).out.measures.TS.HD;
+    MS_RH_now = pop(i).out.measures.TS.RH;
+    
+    mshd_pop(i) = pop(i).out.measures.TS.HD;
+    msrh_pop(i) = pop(i).out.measures.TS.RH;
+    
+    ve_p(i) = pop(i).out.measures.VE.place;
+    ve_rh(i) = pop(i).out.measures.VE.RH;
+    
+    % grab the shuffled distribution for each unit
+    HD_shuf_now = fp(i).B.mshd;
+    RH_shuf_now = fp(i).B.msrh;
+    
+    % find confidence interval for the shuffled distribution
+    HD_ci = [mean(HD_shuf_now) - 2*std(HD_shuf_now), mean(HD_shuf_now) + 2*std(HD_shuf_now)];
+    RH_ci = [mean(RH_shuf_now) - 2*std(RH_shuf_now), mean(RH_shuf_now) + 2*std(RH_shuf_now)];
+    
+    HD_sig(i) = MS_HD_now < HD_ci(1) | MS_HD_now > HD_ci(2);
+    RH_sig(i) = MS_RH_now < RH_ci(1) | MS_RH_now > RH_ci(2);
+    
+    % sort the shuffled distribution and real values
+    HD_sort = sort([HD_shuf_now, MS_HD_now], 'ascend');
+    RH_sort = sort([RH_shuf_now, MS_RH_now], 'ascend');
+    
+    % use a non-parametric method to determine significance
+    if find(HD_sort == MS_HD_now) > 950; HD_sig_NP(i) = 1; end
+    
+    if find(RH_sort == MS_RH_now) > 950
+        RH_sig_NP(i) = 1; 
+%         figure(count); hold on;
+%         histogram(RH_shuf_now, 15); xline(MS_RH_now, 'red');
+        count = count + 1;
+    end
+end
+
+sum(HD_sig)
+sum(HD_sig_NP)
+
+sum(RH_sig)
+sum(RH_sig_NP)
+
+%% For units that are deemed significant
+sig_idx = find(RH_sig_NP==1);
+nsig_idx = find(RH_sig_NP==0);
+for s = 1:length(pop)
+    % amplitude
+    a(s) = pop(s).param.A;
+    % sigma values (stretch)
+    sigmax(s) = pop(s).param.sigma(1);
+    sigmay(s) = pop(s).param.sigma(2);
+    ctrx(s) = pop(s).param.ctr(1);
+    ctry(s) = pop(s).param.ctr(2);
+    avgrate(s) = length(pop(s).ST)./(length(pop(s).param.P)*.02);
+    numspk(s) = length(pop(s).ST);
+    sesslen(s) = (length(pop(s).param.P)*.02);
+end
+
+varnow = avgrate;
+figure; hold on;
+histogram(varnow(nsig_idx),10, 'FaceColor', 'none');
+histogram(varnow(sig_idx),5, 'FaceColor', 'k'); 
+legend({'nsig', 'sig'});
+
+%% correlations
+varnow = mshd_pop';
+sig_binary = RH_sig_NP==1;
+R = corrcoef(varnow, sig_binary);
+% disp(num2str(R));
+
+
+%% plot units
+c(sig_idx) = 1;
+c(nsig_idx) = 2;
+scatter(msrh_pop, ve_rh, [30],c, 'filled');
+colormap(gca,'winter')
+set(gca, 'FontSize', 15); box off;
+xlabel('MS')
+ylabel('VE')
+
+
+% figure out which sessions correspond
+for i = 1:100
+    A = pop(i).param.P;
+    for sess = 1:86
+        B = openfield(sess).P;
+        logical(sess) = isequal(A,B);
+    end
+    sessNum(i) = find(logical==1);
+    
+end
+
+
+

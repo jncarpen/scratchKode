@@ -1,13 +1,14 @@
 %% find percentage of cells that are significant
+pop = place100; fp = place100FP;
 HD_sig_NP = zeros(100,1); RH_sig_NP = zeros(100,1); 
 for i = 1:100
     % grab the modulation strengths for each unit
-    MS_HD_now = A(i).out.measures.TS.HD;
-    MS_RH_now = A(i).out.measures.TS.RH;
+    MS_HD_now = pop(i).out.measures.TS.HD;
+    MS_RH_now = pop(i).out.measures.TS.RH;
     
     % grab the shuffled distribution for each unit
-    HD_shuf_now = A(i).shift.mshd;
-    RH_shuf_now = A(i).shift.msr;
+    HD_shuf_now = fp(i).B.mshd;
+    RH_shuf_now = fp(i).B.msrh;
     
     % find confidence interval for the shuffled distribution
     HD_ci = [mean(HD_shuf_now) - 2*std(HD_shuf_now), mean(HD_shuf_now) + 2*std(HD_shuf_now)];

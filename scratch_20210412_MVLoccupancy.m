@@ -1,0 +1,40 @@
+pop = place100;
+
+CIFcn = @(x,p)std(x(:),'omitnan')/sqrt(sum(~isnan(x(:)))) ...
+* tinv(abs([0,1]-(1-p/100)/2),sum(~isnan(x(:)))-1) + mean(x(:),'omitnan'); 
+p = 95; 
+for i = 1:length(pop)
+    P = pop(i).param.P;
+    Z = get_hd(P); Z = mod((Z+180),360)-180;
+    t = P(:,1); x = P(:,2); y = P(:,3);
+    tpf = mode(diff(t));
+
+    % bin arena (10x10)
+    nbins = 10;
+    [~, xEdges, yEdges, binX, binY] = histcounts2(x,y,nbins);
+    xCenter = (diff(xEdges)/2) + xEdges(1:end-1);
+    yCenter = (diff(yEdges)/2) + yEdges(1:end-1);
+    
+    count = 1;
+    for rr = 1:nbins
+        for cc = 1:nbins
+            idx_here = find(rr == binY & cc == binX);
+            Z_here = Z(idx_here);
+            if ~isempty(Z_here)
+                r(count) = circ_r(deg2rad(Z_here));
+            else
+                r(count) = nan;
+            end
+            count = count + 1;
+        end
+    end
+    
+    m =  bootstrp(1000,@(x)mean(x),r);
+    mrl(i) = mean(m);
+    CI = CIFcn(m,p);
+    ciu(i)= CI(1);
+    cil(i) = CI(2);
+end
+
+% m = bootstrp(1000,@(x)mean(x),r);
+% CI = CIFcn(m,p);

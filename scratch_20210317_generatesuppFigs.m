@@ -1,33 +1,49 @@
-    pop = ego100;
-    % fp = ego100FP;
+    pop = placehd1000;
+    fp = placehd1000FP;
 
     % pull out model fit parameters
-    for i = 1:100
-%         g(i) = pop(i).out.model.fitParams.g;
-%         xref(i) = pop(i).out.model.fitParams.xref*15;
-%         yref(i) = pop(i).out.model.fitParams.yref*15;
+    g = ones(length(pop),1)*nan;
+    xref = ones(length(pop),1)*nan;
+    yref = ones(length(pop),1)*nan;
+    theta = ones(length(pop),1)*nan;
+    param_theta = ones(length(pop),1)*nan;
+    param_A = ones(length(pop),1)*nan;
+    param_kappa = ones(length(pop),1)*nan;
+    rbar = ones(length(pop),1)*nan;
+    rbar_data = ones(length(pop),1)*nan;
+    rbar_shuff = ones(length(pop),1)*nan;
+    rbardata_shuff = ones(length(pop),1)*nan;
+    for j = 1:length(unitNow)
+        i = unitNow(j);
+        g(i) = pop(i).out.model.fitParams.g;
+        xref(i) = pop(i).out.model.fitParams.xref*15;
+        yref(i) = pop(i).out.model.fitParams.yref*15;
         theta(i) = mod(pop(i).out.model.fitParams.thetaP,360);
-        % ctrx(i) = pop(i).param.ctr(1);
-        % ctry(i) = pop(i).param.ctr(2);
+        ctrx(i) = pop(i).root.ctr(1);
+        ctry(i) = pop(i).root.ctr(2);
+        sigmax(i) = pop(i).root.sigma(1);
+        sigmay(i) = pop(i).root.sigma(2);
 
         param_theta(i) = mod(pop(i).param.theta,360);
-    %     param_x(i) = pop(i).param.rp(1);
-    %     param_y(i) = pop(i).param.rp(2);
-    %     
-%         tsrh(i) = pop(i).out.measures.TS.RH;
-    %     tshd(i) = pop(i).out.measures.TS.HD;
+        param_A(i) = pop(i).param.A;
+        param_kappa(i) = pop(i).param.kappa;
+%         param_x(i) = pop(i).param.rp(1);
+%         param_y(i) = pop(i).param.rp(2);
+        
+        rbar(i) = pop(i).out.measures.TS.RH;
+        rbar_data(i) = pop(i).out.measures.TS.HD;
 
 %         verh(i) = pop(i).out.measures.VE.RH;
     %     vep(i) = pop(i).out.measures.VE.place;
 
-    %     verh_shuff(i) = mean(fp(i).B.verh, 'omitnan');
+%         verh_shuff(i) = mean(fp(i).B.verh, 'omitnan');
     %     vep_shuff(i) = mean(fp(i).B.vep, 'omitnan');
     %     
-    %     tsrh_shuff(i) = mean(fp(i).B.msrh, 'omitnan');
-    %     tshd_shuff(i) = mean(fp(i).B.mshd, 'omitnan');
+        rbar_shuff(i) = mean(fp(j).B.msrh, 'omitnan');
+        rbardata_shuff(i) = mean(fp(j).B.mshd, 'omitnan');
     end
     
-    clear g i pop theta xref yref
+%     clear g i pop theta xref yref
 
 
 % get distance between refpoint & predicted (in cm)

@@ -1,6 +1,7 @@
 %% results for RH model
+load('D:\Data\Project Data\Blackstad-OF\RH-model\dsetFinal.mat');
 for sess = 1:86
-    load(['D:\Data\Project Data\Blackstad-OF\RH-model2\jsmod-', ...
+    load(['D:\Data\Project Data\Blackstad-OF\RH-model\jsmod-', ...
         num2str(sess), '.mat']);
     
     % check to see if dset and unit are same length
@@ -38,7 +39,7 @@ for sess = 1:86
             numSpk = length(STnow);
 
             if binsFitByRH > 5
-                if avgRate > 0.05
+%                 if avgRate > 0.05
                     if numSpk > 100
                         dsetRH(sess).unit(count).dManId = dset(sess).unit(u).dManId;
                         dsetRH(sess).unit(count).ST = dset(sess).unit(u).ST;
@@ -46,61 +47,96 @@ for sess = 1:86
                         dsetRH(sess).unit(count).out = unit(u).out;
                         count = count + 1;
                     end
-                end
+%                 end
             end
         end
     end
 end
 
+% save('D:\Data\Project Data\Blackstad-OF\RH-model\dsetRHFinal.mat', 'dsetRH', '-v7.3')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%      subplot(1,2,1)
-%         plotMe(unit(u).out)
-%         subplot(1,2,2)
-%         pathPlot_hd(dset(sess).P,dset(sess).unit(u).ST,get_hd(dset(sess).P));
-%         pause; clf;
-    %% manually check the units
-%     Pnow = dset(sess).P; t = Pnow(:,1);
-%     for u = 1:length(dset(sess).unit)
-%         ST = dset(sess).unit(u).ST;
-%         % remove spikes outside of interval
-%         ST = ST(ST < t(end) & ST > t(1));
-%         % bin spikes every 1/2 ms
-%         edgesT = t(1):0.0005:t(end);
-%         strain = histcounts(ST, edgesT);
-%         % autocorrelogram of spiketimes
+    % manually check the units
+    count = 1;
+    for sess = 1:86
+    Pnow = dsetRH(sess).P; t = Pnow(:,1);
+    for u = 1:length(dsetRH(sess).unit)
+        ST = dsetRH(sess).unit(u).ST;
+        % remove spikes outside of interval
+        ST = ST(ST < t(end) & ST > t(1));
+        % bin spikes every 1/2 ms
+        edgesT = t(1):0.0005:t(end);
+        strain = histcounts(ST, edgesT);
+        % autocorrelogram of spiketimes
 %         [acf,lags,bounds] = autocorr(strain,'NumLags', 0.03/0.0005);
-%         if ~isempty(ST)
-%             subplot(1,2,1)
-%             pathPlot_hd(Pnow, ST, get_hd(Pnow));
-%             title(['s# ', num2str(sess), ...
-%                 ', unit # ', num2str(u)])
-%             subplot(1,2,2)
-%             plot(lags(2:end), acf(2:end), 'k');
-%             pbaspect([1 1 1]); box off;
-%             pause; clf;
-%         end
-%     end
+        rhnow = dsetRH(sess).unit(u).out.measures.TS.RH;
+        if ~isempty(ST) %& dsetRH(sess).unit(u).sigRH == 1 & rhnow < .4
+            fig = figure('units','normalized','outerposition',[0 0 1 1]); % make fullscreen fig
+            set(gcf,'color','w');
+            subplot(1,2,1)
+            pathPlot_hd(Pnow, ST, get_hd(Pnow));
+            title(['s# ', num2str(sess), ...
+                ', unit # ', num2str(u), ' ms: ', ...
+                num2str(rhnow), ', SigYN:', num2str(dsetRH(sess).unit(u).sigRH)]);
+            subplot(1,2,2)
+            plotMe(dsetRH(sess).unit(u).out)
+            pbaspect([1 1 1]); set(gca, 'visible', 'off');
+            fileBody = ['unit-', num2str(count)];
+            filename = strcat('D:\egoAnalysis\April26_openfieldJSRH\', fileBody, '.png');
+            saveas(fig, filename);
+            count = count + 1;
+            close all;
+            
+        end
+    end
+    end
 
 
-%     %% significance
-%     for u = 1:length(unit)
-%         sig(u) = unit(u).sig;
-%     end
-% 
-%     percentsig = 100*(sum(sig)./length(unit));
-% 
-%     disp('---------------------------------------');
-%     disp(['session # ', num2str(sess), ' ----->']);
-%     disp(['total # units: ', num2str(length(unit))]);
-%     disp(['total # sig: ', num2str(sum(sig))]);
-%     disp(['% sig: ', num2str(percentsig)]);
-%     disp('---------------------------------------');
-%     clear unit
-% end
-
-%% save results
-% savepath = ['D:\Data\Project Data\Blackstad-OF\RH-model-results\jsmodResults-', ...
-%     num2str(sess), '.mat'];
-
-
+    %% CALCULATE SPATIAL SPARSITY
+ count = 1;
+ for sess = 1:86
+     s = sessNow(sess);
+     P = dsetRH(sess).P;
+     P = [P(:,1), P(:,2:end).*100];
+     hd = get_hd(P);
+%      [speed, accel] = get_speed(P);
+%      cc= corrcoef(P(:,2), hd);
+%      phd(sess)=cc(2);
+%      cc= corrcoef(speed, hd);
+%      speedhd(sess) = cc(2);
+%      cc= corrcoef([accel;accel(end)], hd);
+%      accelhd(sess)=cc(2);
+     for u = 1:length(dsetRH(sess).unit)
+         sirate(count) = dsetRH(sess).unit(u).SI_rate;
+         sicontent(count) = dsetRH(sess).unit(u).SI_content;
+        ST = dsetRH(sess).unit(u).ST;
+        % find angles at times of spikes
+        spkidx = knnsearch(P(:,1), ST);
+        spk_hd = hd(spkidx);
+        % mean vector length of HD tuning curve
+        rAng(count) = circ_r(deg2rad(spk_hd));
+        tcAng = hdTuning(P,hd,ST,10);
+        N_Ang = length(tcAng);
+        % find angles at times of spikes
+        spkidx = knnsearch(P(:,1), ST);
+        spk_hd = hd(spkidx);
+        % spatial ratemap
+        tcSpatial = reshape(dsetRH(sess).unit(u).out.data.rxy,100,1);
+        N_Spatial = length(tcSpatial);
+        % angular sparsity
+        sAng(count) = 1-(1/N_Ang)*(((nansum(tcAng)).^2)/(nansum(tcAng.^2)));
+        sSpatial(count) = 1-(1/N_Spatial)*(((nansum(tcSpatial)).^2)/(nansum(tcSpatial.^2)));
+        count = count + 1;
+     end
+     
+%      msnow = dsetRH(s).unit(u).out.measures.TS.RH;
+%      venow = dsetRH(s).unit(u).out.measures.VE.RH*100;
+%      if msnow > .7
+%          pathPlot_hd(P, dsetRH(s).unit(u).ST, get_hd(P));
+%          title(['MS: ', num2str(msnow), ', VE: ', num2str(venow), ', S: ', num2str(s), ...
+%              ', U: ', num2str(u)]);
+%          pause; clf;
+%      end
+     
+ end
+ 

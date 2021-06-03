@@ -1,6 +1,6 @@
 %% EVERYTHING YOU NEED TO LOOK AT A CELL TYPE
 
-pop = placehd1000; fp = placehd1000FP;
+pop = hd1000; fp = hd1000FP;
 
 for un = 1:length(fp)
     unitNow(un) = fp(un).B.unit;
@@ -71,10 +71,10 @@ nsig_idx = find(RH_sig_NP==0);
         xref(i) = pop(i).out.model.fitParams.xref*15;
         yref(i) = pop(i).out.model.fitParams.yref*15;
         theta(i) = mod(pop(i).out.model.fitParams.thetaP,360);
-        ctrx(i) = pop(i).root.ctr(1);
-        ctry(i) = pop(i).root.ctr(2);
-        sigmax(i) = pop(i).root.sigma(1);
-        sigmay(i) = pop(i).root.sigma(2);
+%         ctrx(i) = pop(i).root.ctr(1);
+%         ctry(i) = pop(i).root.ctr(2);
+%         sigmax(i) = pop(i).root.sigma(1);
+%         sigmay(i) = pop(i).root.sigma(2);
         
 %         ctrx(i) = pop(i).param.ctr(1);
 %         ctry(i) = pop(i).param.ctr(2);
@@ -84,9 +84,9 @@ nsig_idx = find(RH_sig_NP==0);
         param_theta(i) = mod(pop(i).param.theta,360);
         param_A(i) = pop(i).param.A;
         param_kappa(i) = pop(i).param.kappa;
-        param_x(i) = pop(i).param.rp(1);
-        param_y(i) = pop(i).param.rp(2);
-%         
+%         param_x(i) = pop(i).param.rp(1);
+%         param_y(i) = pop(i).param.rp(2);
+% %         
         rbar(i) = pop(i).out.measures.TS.RH;
         rbar_data(i) = pop(i).out.measures.TS.HD;
         

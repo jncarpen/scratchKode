@@ -1,6 +1,6 @@
 %% ANALYZE CA1 DATASET 
 
-load('D:\Data\Project Data\Blackstad-OF\RH-model\dsetRHFinal.mat')
+% load('D:\Data\Project Data\Blackstad-OF\RH-model\dsetRHFinal.mat')
 
 % GRAB INFORMATION FROM dsetRH struct
 count = 1;
@@ -24,6 +24,7 @@ for sess = 1:length(dsetRH)
         outnow{count} = dsetRH(sess).unit(u).out;
         P{count} = dsetRH(sess).P;
         ST{count} = dsetRH(sess).unit(u).ST;
+        SI(count) = dsetSI(sess).unit(u).contSig;
         count = count + 1;
     end
 end
